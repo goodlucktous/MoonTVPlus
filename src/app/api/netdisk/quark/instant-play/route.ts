@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getConfig } from '@/lib/config';
 import { createQuarkInstantPlayFolder } from '@/lib/netdisk/quark.client';
+import { hasFeaturePermission } from '@/lib/permissions';
 import { base58Encode } from '@/lib/utils';
 
 export const runtime = 'nodejs';
@@ -20,6 +21,9 @@ export async function POST(request: NextRequest) {
     const authInfo = getAuthInfoFromCookie(request);
     if (!authInfo?.username) {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
+    }
+    if (!(await hasFeaturePermission(authInfo.username, 'netdisk_temp_play'))) {
+      return NextResponse.json({ error: '无权限使用临时播放' }, { status: 403 });
     }
 
     const { shareUrl, passcode, title } = await request.json();

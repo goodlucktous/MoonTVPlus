@@ -51,6 +51,7 @@ import { createPortal } from 'react-dom';
 
 import { AdminConfig, AdminConfigResult } from '@/lib/admin.types';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
+import { FEATURE_PERMISSION_OPTIONS } from '@/lib/feature-permissions';
 
 import AnimeSubscriptionComponent from '@/components/AnimeSubscriptionComponent';
 import CorrectDialog from '@/components/CorrectDialog';
@@ -505,10 +506,12 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
   const [newUserGroup, setNewUserGroup] = useState({
     name: '',
     enabledApis: [] as string[],
+    permissions: FEATURE_PERMISSION_OPTIONS.map((item) => item.key) as string[],
   });
   const [editingUserGroup, setEditingUserGroup] = useState<{
     name: string;
     enabledApis: string[];
+    permissions: string[];
   } | null>(null);
   const [showConfigureApisModal, setShowConfigureApisModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{
@@ -577,7 +580,8 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
   const handleUserGroupAction = async (
     action: 'add' | 'edit' | 'delete',
     groupName: string,
-    enabledApis?: string[]
+    enabledApis?: string[],
+    permissions?: string[]
   ) => {
     return withLoading(`userGroup_${action}_${groupName}`, async () => {
       try {
@@ -589,6 +593,7 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
             groupAction: action,
             groupName,
             enabledApis,
+            permissions,
           }),
         });
 
@@ -600,7 +605,11 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
         await refreshConfig();
 
         if (action === 'add') {
-          setNewUserGroup({ name: '', enabledApis: [] });
+          setNewUserGroup({
+            name: '',
+            enabledApis: [],
+            permissions: FEATURE_PERMISSION_OPTIONS.map((item) => item.key),
+          });
           setShowAddUserGroupForm(false);
         } else if (action === 'edit') {
           setEditingUserGroup(null);
@@ -624,7 +633,12 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
 
   const handleAddUserGroup = () => {
     if (!newUserGroup.name.trim()) return;
-    handleUserGroupAction('add', newUserGroup.name, newUserGroup.enabledApis);
+    handleUserGroupAction(
+      'add',
+      newUserGroup.name,
+      newUserGroup.enabledApis,
+      newUserGroup.permissions
+    );
   };
 
   const handleEditUserGroup = () => {
@@ -632,7 +646,8 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
     handleUserGroupAction(
       'edit',
       editingUserGroup.name,
-      editingUserGroup.enabledApis
+      editingUserGroup.enabledApis,
+      editingUserGroup.permissions
     );
   };
 
@@ -668,8 +683,12 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
   const handleStartEditUserGroup = (group: {
     name: string;
     enabledApis: string[];
+    permissions?: string[];
   }) => {
-    setEditingUserGroup({ ...group });
+    setEditingUserGroup({
+      ...group,
+      permissions: group.permissions || [],
+    });
     setShowEditUserGroupForm(true);
     setShowAddUserGroupForm(false);
   };
@@ -1101,6 +1120,9 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
                   可用视频源
                 </th>
+                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                  功能权限
+                </th>
                 <th className='px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
                   操作
                 </th>
@@ -1123,6 +1145,13 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
                           : '无限制'}
                       </span>
                     </div>
+                  </td>
+                  <td className='px-6 py-4 whitespace-nowrap'>
+                    <span className='text-sm text-gray-900 dark:text-gray-100'>
+                      {group.permissions && group.permissions.length > 0
+                        ? `${group.permissions.length} 项`
+                        : '无'}
+                    </span>
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2'>
                     <button
@@ -1148,7 +1177,7 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
               {userGroups.length === 0 && (
                 <tr>
                   <td
-                    colSpan={3}
+                    colSpan={4}
                     className='px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400'
                   >
                     暂无用户组，请添加用户组来管理用户权限
@@ -1925,7 +1954,11 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
             className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4'
             onClick={() => {
               setShowAddUserGroupForm(false);
-              setNewUserGroup({ name: '', enabledApis: [] });
+              setNewUserGroup({
+                name: '',
+                enabledApis: [],
+                permissions: FEATURE_PERMISSION_OPTIONS.map((item) => item.key),
+              });
             }}
           >
             <div
@@ -1940,7 +1973,11 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
                   <button
                     onClick={() => {
                       setShowAddUserGroupForm(false);
-                      setNewUserGroup({ name: '', enabledApis: [] });
+                      setNewUserGroup({
+                        name: '',
+                        enabledApis: [],
+                        permissions: FEATURE_PERMISSION_OPTIONS.map((item) => item.key),
+                      });
                     }}
                     className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors'
                   >
@@ -1978,6 +2015,47 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
                       }
                       className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                     />
+                  </div>
+
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4'>
+                      功能权限
+                    </label>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                      {FEATURE_PERMISSION_OPTIONS.map((permission) => (
+                        <label
+                          key={permission.key}
+                          className='flex items-start space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors'
+                        >
+                          <input
+                            type='checkbox'
+                            checked={newUserGroup.permissions.includes(permission.key)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewUserGroup((prev) => ({
+                                  ...prev,
+                                  permissions: [...prev.permissions, permission.key],
+                                }));
+                              } else {
+                                setNewUserGroup((prev) => ({
+                                  ...prev,
+                                  permissions: prev.permissions.filter((item) => item !== permission.key),
+                                }));
+                              }
+                            }}
+                            className='mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700'
+                          />
+                          <div className='flex-1 min-w-0'>
+                            <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                              {permission.label}
+                            </div>
+                            <div className='text-xs text-gray-500 dark:text-gray-400'>
+                              {permission.description}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
                   </div>
 
                   {/* 可用视频源 */}
@@ -2066,7 +2144,11 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
                     <button
                       onClick={() => {
                         setShowAddUserGroupForm(false);
-                        setNewUserGroup({ name: '', enabledApis: [] });
+                        setNewUserGroup({
+                          name: '',
+                          enabledApis: [],
+                          permissions: FEATURE_PERMISSION_OPTIONS.map((item) => item.key),
+                        });
                       }}
                       className={`px-6 py-2.5 text-sm font-medium ${buttonStyles.secondary}`}
                     >
@@ -2225,6 +2307,55 @@ const UserConfig = ({ config, role, refreshConfig, usersV2, userPage, userTotalP
                       >
                         全选
                       </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4'>
+                      功能权限
+                    </label>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+                      {FEATURE_PERMISSION_OPTIONS.map((permission) => (
+                        <label
+                          key={permission.key}
+                          className='flex items-start space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors'
+                        >
+                          <input
+                            type='checkbox'
+                            checked={editingUserGroup.permissions.includes(permission.key)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditingUserGroup((prev) =>
+                                  prev
+                                    ? {
+                                        ...prev,
+                                        permissions: [...prev.permissions, permission.key],
+                                      }
+                                    : null
+                                );
+                              } else {
+                                setEditingUserGroup((prev) =>
+                                  prev
+                                    ? {
+                                        ...prev,
+                                        permissions: prev.permissions.filter((item) => item !== permission.key),
+                                      }
+                                    : null
+                                );
+                              }
+                            }}
+                            className='mt-0.5 rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700'
+                          />
+                          <div className='flex-1 min-w-0'>
+                            <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                              {permission.label}
+                            </div>
+                            <div className='text-xs text-gray-500 dark:text-gray-400'>
+                              {permission.description}
+                            </div>
+                          </div>
+                        </label>
+                      ))}
                     </div>
                   </div>
 
@@ -11290,9 +11421,6 @@ const AIConfigComponent = ({
   const [enablePlayPageEntry, setEnablePlayPageEntry] = useState(true);
   const [enableAIComments, setEnableAIComments] = useState(false);
 
-  // 权限控制
-  const [allowRegularUsers, setAllowRegularUsers] = useState(true);
-
   // 高级设置
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(1000);
@@ -11320,7 +11448,6 @@ const AIConfigComponent = ({
       setEnableVideoCardEntry(config.AIConfig.EnableVideoCardEntry !== false);
       setEnablePlayPageEntry(config.AIConfig.EnablePlayPageEntry !== false);
       setEnableAIComments(config.AIConfig.EnableAIComments || false);
-      setAllowRegularUsers(config.AIConfig.AllowRegularUsers !== false);
       setTemperature(config.AIConfig.Temperature ?? 0.7);
       setMaxTokens(config.AIConfig.MaxTokens ?? 1000);
       setSystemPrompt(config.AIConfig.SystemPrompt || '');
@@ -11354,7 +11481,6 @@ const AIConfigComponent = ({
             EnableVideoCardEntry: enableVideoCardEntry,
             EnablePlayPageEntry: enablePlayPageEntry,
             EnableAIComments: enableAIComments,
-            AllowRegularUsers: allowRegularUsers,
             Temperature: temperature,
             MaxTokens: maxTokens,
             SystemPrompt: systemPrompt,
@@ -11645,33 +11771,6 @@ const AIConfigComponent = ({
             </label>
           </div>
         ))}
-      </div>
-
-      {/* 权限控制 */}
-      <div className='space-y-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg'>
-        <h4 className='text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3'>
-          权限控制
-        </h4>
-
-        <div className='flex items-center justify-between py-2'>
-          <div>
-            <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
-              允许普通用户使用
-            </div>
-            <div className='text-xs text-gray-500 dark:text-gray-400'>
-              关闭后仅站长和管理员可使用AI问片功能
-            </div>
-          </div>
-          <label className='relative inline-flex items-center cursor-pointer'>
-            <input
-              type='checkbox'
-              checked={allowRegularUsers}
-              onChange={(e) => setAllowRegularUsers(e.target.checked)}
-              className='sr-only peer'
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 dark:peer-focus:ring-yellow-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
-          </label>
-        </div>
       </div>
 
       {/* 高级设置 */}

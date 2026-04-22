@@ -148,6 +148,7 @@ function PlayPageClient() {
 
   // 网盘搜索弹窗状态
   const [showPansouDialog, setShowPansouDialog] = useState(false);
+  const [netdiskSearchEnabled, setNetdiskSearchEnabled] = useState(false);
 
   // AI问片状态
   const [showAIChat, setShowAIChat] = useState(false);
@@ -215,6 +216,14 @@ function PlayPageClient() {
       if (defaultMsg) {
         setAiDefaultMessageWithVideo(defaultMsg);
       }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setNetdiskSearchEnabled(
+        !!(window as any).RUNTIME_CONFIG?.NETDISK_SEARCH_ENABLED
+      );
     }
   }, []);
 
@@ -9503,16 +9512,18 @@ function PlayPageClient() {
                       <FavoriteIcon filled={favorited} />
                     </button>
                     {/* 网盘搜索按钮 */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDrawer('pansou');
-                      }}
-                      className='flex-shrink-0 hover:opacity-80 transition-opacity'
-                      title='搜索网盘资源'
-                    >
-                      <Cloud className='h-6 w-6 text-gray-700 dark:text-gray-300' />
-                    </button>
+                    {netdiskSearchEnabled && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDrawer('pansou');
+                        }}
+                        className='flex-shrink-0 hover:opacity-80 transition-opacity'
+                        title='搜索网盘资源'
+                      >
+                        <Cloud className='h-6 w-6 text-gray-700 dark:text-gray-300' />
+                      </button>
+                    )}
                     {/* AI问片按钮 */}
                     {aiEnabled && detail && (
                       <button

@@ -116,6 +116,12 @@ export default function MusicPage() {
   const [loadingPlayAll, setLoadingPlayAll] = useState(false); // 播放全部加载状态
   const [deletingPlaylistId, setDeletingPlaylistId] = useState<string | null>(null); // 正在删除的歌单ID
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !(window as any).RUNTIME_CONFIG?.MUSIC_ENABLED) {
+      router.replace('/');
+    }
+  }, [router]);
+
   // Toast 和 Confirm Modal 状态
   const [toast, setToast] = useState<ToastProps | null>(null);
   const [confirmModal, setConfirmModal] = useState<{

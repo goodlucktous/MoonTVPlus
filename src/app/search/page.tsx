@@ -63,6 +63,8 @@ function SearchPageClient() {
   const [userRole, setUserRole] = useState<'owner' | 'admin' | 'user' | null>(
     null
   );
+  const [netdiskSearchEnabled, setNetdiskSearchEnabled] = useState(false);
+  const [magnetSearchEnabled, setMagnetSearchEnabled] = useState(false);
   // 繁体转简体转换器
   const converterRef = useRef<((text: string) => string) | null>(null);
   // 转换器是否已初始化
@@ -964,7 +966,10 @@ function SearchPageClient() {
     const typeParam = searchParams.get('type');
     const query = searchParams.get('q');
 
-    if (typeParam === 'pansou' || typeParam === 'acg') {
+    if (
+      (typeParam === 'pansou' && netdiskSearchEnabled) ||
+      (typeParam === 'acg' && magnetSearchEnabled)
+    ) {
       setActiveTab(typeParam);
 
       // 如果有搜索关键词且显示结果，触发对应的搜索
@@ -994,6 +999,12 @@ function SearchPageClient() {
     // 获取用户权限
     const authInfo = getAuthInfoFromBrowserCookie();
     setUserRole(authInfo?.role || null);
+    setNetdiskSearchEnabled(
+      !!(window as any).RUNTIME_CONFIG?.NETDISK_SEARCH_ENABLED
+    );
+    setMagnetSearchEnabled(
+      !!(window as any).RUNTIME_CONFIG?.MAGNET_SEARCH_ENABLED
+    );
 
     // 初始化繁体转简体转换器
     if (typeof window !== 'undefined') {
@@ -1337,7 +1348,7 @@ function SearchPageClient() {
       setShowResults(false);
       setShowSuggestions(false);
     }
-  }, [searchParams, forceRefresh, converterReady]);
+  }, [searchParams, forceRefresh, converterReady, netdiskSearchEnabled, magnetSearchEnabled]);
 
   // 组件卸载时，关闭可能存在的连接
   useEffect(() => {
@@ -1558,13 +1569,16 @@ function SearchPageClient() {
                   value: 'video',
                   icon: <Film size={16} />,
                 },
-                {
-                  label: '网盘搜索',
-                  value: 'pansou',
-                  icon: <HardDrive size={16} />,
-                },
-                // 仅管理员和站长显示 ACG 磁力搜索
-                ...(userRole === 'admin' || userRole === 'owner'
+                ...(netdiskSearchEnabled
+                  ? [
+                      {
+                        label: '网盘搜索',
+                        value: 'pansou' as const,
+                        icon: <HardDrive size={16} />,
+                      },
+                    ]
+                  : []),
+                ...(magnetSearchEnabled
                   ? [
                       {
                         label: '动漫磁力',
